@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MLE Path</title>
+<style>
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --panel2:#faf9f7; --ink:#1c1b19; --ink2:#55524c; --ink3:#8a867e;
+  --line:#e6e3dd; --line2:#d6d2ca; --acc:#1f6f5c; --acc-ink:#fff; --acc-soft:#e3f0ec;
+  --warn:#9a5b00; --warn-bg:#fff4e0; --warn-line:#f0d6a8; --bad:#b42318; --good:#1f7a3d;
+  --heat0:#ebe8e2; --heat1:#c6e3d9; --heat2:#86c4ae; --heat3:#3f9a7c; --heat4:#1f6f5c;
+  --r:10px; --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141412; --panel:#1c1c1a; --panel2:#222220; --ink:#ecebe7; --ink2:#b4b1aa; --ink3:#85827b;
+  --line:#2e2d2a; --line2:#3a3936; --acc:#4fb394; --acc-ink:#0c1a15; --acc-soft:#1d332c;
+  --warn:#f0b357; --warn-bg:#2d2414; --warn-line:#4a3a1c; --bad:#f97066; --good:#5cc985;
+  --heat0:#262624; --heat1:#1e3d33; --heat2:#2a6450; --heat3:#3a8d70; --heat4:#4fb394;
+}}
+:root[data-theme="dark"]{
+  --bg:#141412; --panel:#1c1c1a; --panel2:#222220; --ink:#ecebe7; --ink2:#b4b1aa; --ink3:#85827b;
+  --line:#2e2d2a; --line2:#3a3936; --acc:#4fb394; --acc-ink:#0c1a15; --acc-soft:#1d332c;
+  --warn:#f0b357; --warn-bg:#2d2414; --warn-line:#4a3a1c; --bad:#f97066; --good:#5cc985;
+  --heat0:#262624; --heat1:#1e3d33; --heat2:#2a6450; --heat3:#3a8d70; --heat4:#4fb394;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+a{color:var(--acc)}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 64px}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.hbar{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:-.01em;font-size:16px;display:flex;gap:8px;align-items:center}
+.brand .dot{width:10px;height:10px;border-radius:3px;background:var(--acc)}
+nav{display:flex;gap:2px;flex-wrap:wrap}
+nav a{padding:6px 10px;border-radius:8px;color:var(--ink2);text-decoration:none;font-weight:500}
+nav a:hover{background:var(--panel)}
+nav a.on{background:var(--panel);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.sp{flex:1}
+.save{font-size:12px;color:var(--ink3)}
+h1{font-size:22px;margin:22px 0 4px;letter-spacing:-.015em}
+h2{font-size:15px;margin:0 0 10px}
+h3{font-size:14px;margin:0 0 6px}
+.sub{color:var(--ink2);margin:0 0 16px}
+.muted{color:var(--ink3)}
+.small{font-size:12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:minmax(0,1.65fr) minmax(0,1fr)}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:860px){.g2,.g3{grid-template-columns:minmax(0,1fr)}}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:14px 0 16px}
+@media (max-width:980px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:520px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.kpi .l{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em}
+.kpi .v{font-size:19px;font-weight:650;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--ink2)}
+.bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--acc);border-radius:4px}
+.banner{border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:var(--r);padding:12px 14px;margin:14px 0 0}
+.banner b{color:var(--warn)}
+.banner.ok{border-color:var(--line);background:var(--acc-soft)}
+.banner.ok b{color:var(--acc)}
+.banner .acts{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.banner .btn{white-space:normal;text-align:left}
+.btn{border:1px solid var(--line2);background:var(--panel);padding:6px 11px;border-radius:8px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap}
+.btn:hover{border-color:var(--ink3)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--ink2)}
+.btn.ghost:hover{background:var(--panel2);border-color:var(--line)}
+.btn.sm{padding:3px 8px;font-size:12px}
+.btn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--ink2);white-space:nowrap}
+.chip i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.tag{font-size:11px;padding:1px 6px;border-radius:5px;border:1px solid var(--line);color:var(--ink2);white-space:nowrap}
+.tag.s{border-style:dashed}
+.tag.done{color:var(--good);border-color:color-mix(in srgb,var(--good) 40%,transparent)}
+.tag.late{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
+.card{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;background:var(--panel);margin-bottom:10px;border-left:3px solid var(--c,var(--acc))}
+.card.isdone{opacity:.62}
+.card.isdone .ttl{text-decoration:line-through}
+.card .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.card .ttl{font-weight:600;font-size:15px}
+.card .det{color:var(--ink2);margin:4px 0 8px}
+.card .res{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12.5px;margin-bottom:8px}
+.rl{display:inline-flex;gap:5px;align-items:baseline}
+.rt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink3)}
+.rt-video,.rt-course{color:var(--acc)}
+.rt-dataset{color:var(--warn)}
+.card .acts{display:flex;gap:6px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:12px;font-weight:600;color:var(--ink2)}
+input[type=text],input[type=number],input[type=date],input[type=url],select,textarea{border:1px solid var(--line2);background:var(--panel);border-radius:8px;padding:6px 9px;min-width:0}
+textarea{resize:vertical;min-height:64px;width:100%}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chk{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.chk input{margin-top:3px;accent-color:var(--acc)}
+.list{list-style:none;margin:0;padding:0}
+.trow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;padding:8px 6px;border-top:1px solid var(--line);align-items:start}
+.trow:first-child{border-top:0}
+.trow input{accent-color:var(--acc);margin-top:3px}
+.trow .tt{font-weight:550}
+.trow.isdone .tt{text-decoration:line-through;color:var(--ink3)}
+.trow details summary{cursor:pointer;list-style:none}
+.trow details summary::-webkit-details-marker{display:none}
+.trow .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;align-items:center}
+.trow .side{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.wk{margin-bottom:14px}
+.wk-h{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+.wk-h .n{font-weight:700}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 14px}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:6px 11px;cursor:pointer;font-weight:500;font-size:13px}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.heat{display:grid;grid-auto-flow:column;grid-auto-columns:12px;grid-template-rows:repeat(7,12px);gap:3px;justify-content:start;overflow-x:auto;padding-bottom:4px}
+.heat span{width:12px;height:12px;border-radius:3px;background:var(--heat0)}
+.heat span.h1{background:var(--heat1)}.heat span.h2{background:var(--heat2)}.heat span.h3{background:var(--heat3)}.heat span.h4{background:var(--heat4)}
+.heat span.out{background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+.heat span.today{box-shadow:0 0 0 1.5px var(--ink)}
+.legend{display:flex;gap:4px;align-items:center;font-size:11px;color:var(--ink3);margin-top:6px}
+.legend span{width:10px;height:10px;border-radius:2px;display:inline-block}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal .dh{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;padding:0 4px}
+.cal .day{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px;min-height:110px;font-size:12px;display:flex;flex-direction:column;gap:4px}
+.cal .day.today{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.cal .day.off{background:var(--panel2)}
+.cal .day .dd{display:flex;justify-content:space-between;align-items:center;gap:4px}
+.cal .day .dd b{font-size:12px}
+.cal .day input{width:46px;padding:1px 4px;font-size:11px}
+.cal .it{border-left:3px solid var(--c);padding:1px 0 1px 5px;line-height:1.3;color:var(--ink2)}
+@media (max-width:720px){.cal{grid-template-columns:minmax(0,1fr)}.cal .dh{display:none}.cal .day{min-height:0}}
+.phase{border-left:3px solid var(--acc)}
+.phase ul{margin:6px 0 0;padding-left:0;list-style:none}
+.phase li{margin:3px 0}
+.trk{display:grid;grid-template-columns:150px minmax(0,1fr) 90px;gap:10px;align-items:center;margin:6px 0;font-size:13px}
+@media (max-width:520px){.trk{grid-template-columns:110px minmax(0,1fr) 70px}}
+.lcg{margin-bottom:12px}
+.lcg .hd{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:4px}
+.lcrow{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:4px 2px;border-top:1px solid var(--line)}
+.lcrow input{accent-color:var(--acc)}
+.dE{color:#1f7a3d}.dM{color:#9a6700}.dH{color:#b42318}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .dE{color:#5cc985}:root:not([data-theme="light"]) .dM{color:#f0b357}:root:not([data-theme="light"]) .dH{color:#f97066}}
+.locked{opacity:.55}
+.empty{padding:22px;text-align:center;color:var(--ink2);border:1px dashed var(--line2);border-radius:var(--r)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .15s;pointer-events:none;z-index:20}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+code{background:var(--panel2);border:1px solid var(--line);padding:0 4px;border-radius:4px;font-size:12.5px}
+</style>
+</head>
+<body>
+<header><div class="hbar">
+  <div class="brand"><span class="dot"></span>MLE Path</div>
+  <nav id="nav">
+    <a href="#today">Today</a><a href="#plan">Plan</a><a href="#roadmap">Roadmap</a><a href="#projects">Projects</a><a href="#leetcode">LeetCode</a><a href="#resources">Resources</a><a href="#settings">Settings</a>
+  </nav>
+  <div class="sp"></div>
+  <span class="save" id="saveState"></span>
+</div></header>
+<main class="wrap" id="app"></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="data.js"></script>
+<script>
+/* =================== utilities =================== */
+const pad=n=>String(n).padStart(2,'0');
+const ds=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const pd=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addD=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return ds(d)};
+const diffD=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
+const dow=s=>pd(s).getDay();
+const fmt=(s,o={day:'numeric',month:'short'})=>pd(s).toLocaleDateString(undefined,o);
+const fmtL=s=>fmt(s,{weekday:'short',day:'numeric',month:'short'});
+const fmtY=s=>fmt(s,{day:'numeric',month:'short',year:'numeric'});
+const h1=x=>Math.round(x*10)/10;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const qp=new URLSearchParams(location.search);
+const TODAY=qp.get('today')||ds(new Date()); // ?today=YYYY-MM-DD lets you preview the auto-adjust
+const mondayOf=s=>addD(s,-((dow(s)+6)%7));
+const TBYID=Object.fromEntries(TASKS.map(t=>[t.id,t]));
+const TOTAL_H=TASKS.reduce((a,t)=>a+t.h,0);
+
+/* =================== state =================== */
+const KEY='mle-path-v1';
+function nextMonday(){const t=ds(new Date());const d=dow(t);return d===1?t:addD(t,((8-d)%7)||7)}
+function defaults(){const start=nextMonday();return{v:1,updatedAt:0,start,target:addD(start,26*7-1),
+  dayHrs:[3.5,2,2,2,2,2,3.5],autoTrim:true,done:{},prog:{},plog:{},deferred:{},keep:{},overrides:{},catchup:null,
+  checkins:{},lc:{},repos:{},crit:{},exit:{},missAck:null,theme:'auto'}}
+let S=defaults();
+let SERVER=false,saveTimer=null;
+async function load(){
+  let fromServer=null,fromLocal=null;
+  try{const r=await fetch('api/state',{cache:'no-store'});if(r.ok){SERVER=true;const j=await r.json();if(j&&j.v)fromServer=j;}}catch(e){}
+  try{const j=JSON.parse(localStorage.getItem(KEY)||'null');if(j&&j.v)fromLocal=j;}catch(e){}
+  const pick=[fromServer,fromLocal].filter(Boolean).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))[0];
+  if(pick)S=Object.assign(defaults(),pick);
+  setSaveLabel();
+}
+function save(){
+  S.updatedAt=Date.now();
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    if(!SERVER)return;
+    try{await fetch('api/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)});}catch(e){SERVER=false;setSaveLabel();}
+  },300);
+}
+function setSaveLabel(){document.getElementById('saveState').textContent=SERVER?'Saved to progress.json':'Saved in this browser'}
+function commit(msg){save();render();if(msg)toast(msg)}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),1800)}
+
+/* =================== capacity & scheduler =================== */
+function baseCap(d){return d<S.start?0:(+S.dayHrs[dow(d)]||0)}
+function capacity(d){
+  if(d<S.start)return 0;
+  if(S.overrides[d]!=null&&S.overrides[d]!=='')return +S.overrides[d];
+  let c=+S.dayHrs[dow(d)]||0;
+  const cu=S.catchup;
+  if(cu&&d>=cu.from&&d<=cu.until&&c>0)c+=(dow(d)===0||dow(d)===6)?cu.we:cu.wd;
+  return c;
+}
+function hoursOn(d){ // hours actually logged on a date
+  let h=0;
+  for(const[id,v] of Object.entries(S.done))if(v.date===d&&!v.known)h+=v.hrs??TBYID[id]?.h??0;
+  for(const v of Object.values(S.plog[d]||{}))h+=v;
+  return h;
+}
+function remaining(t){return Math.max(0,t.h-(S.prog[t.id]||0))}
+
+function schedule(excl,baseline){
+  const byDate={},taskDates={};let end=null;
+  let d=baseline?S.start:(TODAY<S.start?S.start:TODAY);
+  let used=(!baseline&&d===TODAY)?hoursOn(TODAY):0;
+  let guard=0;
+  for(const t of TASKS){
+    if(!baseline&&(S.done[t.id]||excl.has(t.id)))continue;
+    let rem=baseline?t.h:remaining(t);if(rem<=0)continue;
+    const parts=[];
+    while(rem>1e-6&&guard++<20000){
+      const cap=baseline?baseCap(d):capacity(d);
+      const free=cap-used;
+      if(free<=0.01){d=addD(d,1);used=0;continue}
+      if(rem<=free+0.25){parts.push([d,rem]);used+=rem;rem=0}
+      else if(free>=1.5||used===0){parts.push([d,free]);used+=free;rem-=free;d=addD(d,1);used=0}
+      else{d=addD(d,1);used=0}
+    }
+    parts.forEach(([dd,hh],i)=>{(byDate[dd]=byDate[dd]||[]).push({t,h:hh,part:i+1,of:parts.length})});
+    if(parts.length){taskDates[t.id]={start:parts[0][0],end:parts[parts.length-1][0]};end=parts[parts.length-1][0]}
+  }
+  return{byDate,taskDates,end};
+}
+let BASE=null;
+function plan(){
+  BASE=schedule(new Set(),true);
+  const excl=new Set(Object.keys(S.deferred).filter(k=>S.deferred[k]));
+  let sch=schedule(excl,false);
+  const trimmed=[];
+  if(S.autoTrim&&sch.end&&sch.end>S.target){
+    const stretch=TASKS.filter(t=>t.s&&!S.done[t.id]&&!excl.has(t.id)&&!S.keep[t.id]).reverse();
+    for(const t of stretch){excl.add(t.id);trimmed.push(t.id);sch=schedule(excl,false);if(!sch.end||sch.end<=S.target)break}
+  }
+  return Object.assign(sch,{trimmed});
+}
+
+/* =================== derived stats =================== */
+function stats(P){
+  const doneH=TASKS.reduce((a,t)=>a+(S.done[t.id]?t.h:(S.prog[t.id]||0)),0);
+  let dueH=0;for(const[d,arr] of Object.entries(BASE.byDate))if(d<TODAY)arr.forEach(x=>dueH+=x.h);
+  const actDays=new Set();
+  Object.values(S.done).forEach(v=>{if(!v.known)actDays.add(v.date)});
+  Object.keys(S.plog).forEach(d=>actDays.add(d));
+  Object.entries(S.checkins).forEach(([d,c])=>{if((+c.hrs||0)>0||c.commit)actDays.add(d)});
+  Object.values(S.lc).forEach(d=>actDays.add(d));
+  // streak
+  let streak=0,d=actDays.has(TODAY)?TODAY:addD(TODAY,-1);
+  while(d>=S.start){if(actDays.has(d))streak++;else if(capacity(d)>0)break;d=addD(d,-1)}
+  // missed study days since last activity
+  const past=[...actDays].filter(x=>x<TODAY).sort();
+  let last=past.length?past[past.length-1]:addD(S.start,-1);
+  let missed=0,firstMiss=null;
+  for(let x=addD(last,1);x<TODAY;x=addD(x,1))if(baseCap(x)>0&&S.overrides[x]!==0&&S.overrides[x]!=='0'){missed++;firstMiss=firstMiss||x}
+  const wkStart=mondayOf(TODAY);let wkH=0;for(let x=wkStart;x<=TODAY;x=addD(x,1))wkH+=Math.max(hoursOn(x),+(S.checkins[x]?.hrs)||0);
+  const week=Math.min(26,Math.max(1,Math.floor(diffD(S.start,TODAY)/7)+1));
+  const lcN=Object.keys(S.lc).length;
+  const lcTotal=LC.reduce((a,g)=>a+g.items.length,0);
+  // LC pace: linear from week 3 to week 24
+  const wkF=diffD(S.start,TODAY)/7;const lcDue=Math.round(Math.max(0,Math.min(1,(wkF-2)/22))*lcTotal);
+  return{doneH,dueH,behind:dueH-doneH,actDays,streak,missed,firstMiss,last,wkH,week,lcN,lcTotal,lcDue};
+}
+function phaseOfWeek(w){return PHASES.find(p=>w>=p.weeks[0]&&w<=p.weeks[1])}
+
+/* =================== rendering =================== */
+const chip=tr=>`<span class="chip"><i style="background:${TRACKS[tr].c}"></i>${TRACKS[tr].n}</span>`;
+const RT={video:'Video',course:'Course',book:'Book',docs:'Docs',practice:'Practice',dataset:'Dataset',tool:'Tool',article:'Read'};
+const rlink=k=>R[k]?`<span class="rl"><span class="rt rt-${R[k][2]}">${RT[R[k][2]]||''}</span><a href="${R[k][1]}" target="_blank" rel="noopener">${esc(R[k][0])}</a></span>`:'';
+const resLinks=t=>t.res.map(rlink).join('');
+function taskCard(t,info={}){
+  const done=S.done[t.id];
+  const partTxt=info.of>1?`<span class="tag">part ${info.part}/${info.of} · ${h1(info.h)}h today</span>`:'';
+  const progTxt=S.prog[t.id]&&!done?`<span class="tag">${h1(S.prog[t.id])}h of ${t.h}h logged</span>`:'';
+  const proj=t.p?`<span class="tag">${PROJECTS.find(p=>p.id===t.p).name}</span>`:'';
+  return `<div class="card ${done?'isdone':''}" style="--c:${TRACKS[t.tr].c}">
+   <div class="top">${chip(t.tr)}<span class="tag">Week ${t.w}</span><span class="tag">${t.h}h</span>${t.s?'<span class="tag s">stretch</span>':''}${proj}${partTxt}${progTxt}${done?`<span class="tag done">${done.known?'skipped – known':'done '+fmt(done.date)}</span>`:''}</div>
+   <div class="ttl">${esc(t.title)}</div>
+   <div class="det">${esc(t.d)}</div>
+   ${t.res.length?`<div class="res">${resLinks(t)}</div>`:''}
+   <div class="acts">${done?`<button class="btn sm" data-a="undone" data-id="${t.id}">Undo</button>`:
+     `<button class="btn pri sm" data-a="done" data-id="${t.id}">Mark done</button>
+      ${info.of>1&&info.part<info.of?`<button class="btn sm" data-a="part" data-id="${t.id}" data-h="${info.h}">Log today's part (${h1(info.h)}h)</button>`:''}
+      <button class="btn sm" data-a="known" data-id="${t.id}" title="Skip it: you already know this. Frees the time and pulls the plan forward.">I know this</button>
+      <button class="btn ghost sm" data-a="defer" data-id="${t.id}">Defer to backlog</button>`}
+   </div></div>`;
+}
+
+function render(){
+  const route=(location.hash||'#today').slice(1);
+  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+route));
+  const P=plan(),ST=stats(P);
+  const v={today:vToday,plan:vPlan,roadmap:vRoadmap,projects:vProjects,leetcode:vLC,resources:vRes,settings:vSettings}[route]||vToday;
+  document.getElementById('app').innerHTML=v(P,ST);
+  document.documentElement.dataset.theme=S.theme==='auto'?'':S.theme;
+  if(S.theme==='auto')document.documentElement.removeAttribute('data-theme');
+}
+
+function kpis(P,ST){
+  const pct=Math.round(ST.doneH/TOTAL_H*100);
+  const slip=P.end?diffD(S.target,P.end):0;
+  const ph=phaseOfWeek(ST.week);
+  const started=TODAY>=S.start;
+  return `<div class="kpis">
+   <div class="kpi"><div class="l">${started?'Week':'Starts'}</div><div class="v">${started?ST.week+' / 26':fmt(S.start)}</div><div class="s">${started?'Phase '+ph.n+': '+esc(ph.name.split(':')[0]):'in '+diffD(TODAY,S.start)+' day(s)'}</div></div>
+   <div class="kpi"><div class="l">Completed</div><div class="v">${pct}%</div><div class="bar" style="margin-top:6px"><i style="width:${pct}%"></i></div><div class="s">${h1(ST.doneH)} of ${TOTAL_H}h</div></div>
+   <div class="kpi"><div class="l">Projected finish</div><div class="v">${P.end?fmt(P.end):'Done 🎉'}</div><div class="s" style="color:${slip>0?'var(--bad)':'var(--good)'}">${P.end?(slip>0?slip+(slip===1?' day':' days')+' late':Math.abs(slip)+(Math.abs(slip)===1?' day':' days')+' spare'):''}</div></div>
+   <div class="kpi"><div class="l">vs. original plan</div><div class="v" style="color:${ST.behind>0.5?'var(--bad)':'var(--good)'}">${ST.behind>0.5?h1(ST.behind)+'h behind':ST.behind<-0.5?h1(-ST.behind)+'h ahead':'On track'}</div><div class="s">${h1(ST.dueH)}h were due by today</div></div>
+   <div class="kpi"><div class="l">Streak · this week</div><div class="v">${ST.streak}d</div><div class="s">${h1(ST.wkH)}h logged this week</div></div>
+   <div class="kpi"><div class="l">LeetCode</div><div class="v">${ST.lcN}<span class="muted" style="font-size:13px"> / ${ST.lcTotal}</span></div><div class="s" style="color:${ST.lcN<ST.lcDue?'var(--bad)':'var(--ink2)'}">pace target today: ${ST.lcDue}</div></div>
+  </div>`;
+}
+
+function banner(P,ST){
+  let out='';
+  const slip=P.end?diffD(S.target,P.end):0;
+  const trimmedH=P.trimmed.reduce((a,id)=>a+TBYID[id].h,0);
+  if(ST.missed>0&&S.missAck!==TODAY&&TODAY>S.start){
+    out+=`<div class="banner"><b>Welcome back. You missed ${ST.missed} study day${ST.missed>1?'s':''}${ST.firstMiss?' since '+fmtL(ST.firstMiss):''}.</b>
+    Nothing is lost: every unfinished task was rolled forward and your calendar has been rebuilt from today.
+    ${P.trimmed.length?` To protect your target date, ${P.trimmed.length} stretch task${P.trimmed.length>1?'s':''} (${h1(trimmedH)}h) moved to the backlog.`:''}
+    ${slip>0?` Projected finish is now <b>${fmtY(P.end)}</b>, ${slip} days after your target.`:` You're still on course for ${fmtY(S.target)}.`}
+    <div class="acts">${slip>0&&!S.catchup?`<button class="btn pri sm" data-a="catchup">Add catch-up time: +30 min weekdays, +1h weekends for 3 weeks</button>`:''}
+    <button class="btn sm" data-a="ackMiss">Got it</button></div></div>`;
+  } else if(slip>0){
+    out+=`<div class="banner"><b>Projected finish ${fmtY(P.end)} — ${slip} days past your target.</b>
+     ${P.trimmed.length?`Already deferred ${P.trimmed.length} stretch tasks. `:''}Options: add catch-up hours, mark topics you already know with “I know this”, or move the target in Settings.
+     <div class="acts">${!S.catchup?`<button class="btn pri sm" data-a="catchup">Add catch-up hours for 3 weeks</button>`:`<span class="small muted">Catch-up hours active until ${fmt(S.catchup.until)}.</span>`}<a class="btn sm" href="#settings">Adjust target</a></div></div>`;
+  } else if(P.trimmed.length){
+    out+=`<div class="banner ok"><b>Auto-adjusted.</b> ${P.trimmed.length} stretch task${P.trimmed.length>1?'s':''} (${h1(trimmedH)}h) moved to the backlog so you still finish by ${fmtY(S.target)}. Catch up and they come back automatically.</div>`;
+  }
+  return out;
+}
+
+function heatmap(ST){
+  const s=mondayOf(S.start);const e=addD(mondayOf(S.target>(TODAY)?S.target:TODAY),6);
+  let cells='';
+  for(let d=s;d<=e;d=addD(d,1)){
+    const h=Math.max(hoursOn(d),+(S.checkins[d]?.hrs)||0);
+    const lcn=Object.values(S.lc).filter(x=>x===d).length;
+    const cls=d<S.start||d>S.target?'out':h>=3?'h4':h>=2?'h3':h>=1?'h2':(h>0||lcn||S.checkins[d]?.commit)?'h1':'';
+    cells+=`<span class="${cls} ${d===TODAY?'today':''}" title="${fmtL(d)}: ${h1(h)}h${lcn?', '+lcn+' LeetCode':''}${S.checkins[d]?.commit?', committed':''}"></span>`;
+  }
+  return `<div class="heat" style="grid-template-rows:repeat(7,12px)">${cells}</div>
+  <div class="legend">Less <span style="background:var(--heat0)"></span><span style="background:var(--heat1)"></span><span style="background:var(--heat2)"></span><span style="background:var(--heat3)"></span><span style="background:var(--heat4)"></span> More · columns are weeks (Mon→Sun)</div>`;
+}
+
+/* ---------- Today ---------- */
+function vToday(P,ST){
+  const started=TODAY>=S.start;
+  const todays=(P.byDate[TODAY]||[]);
+  const doneToday=Object.entries(S.done).filter(([id,v])=>v.date===TODAY).map(([id])=>TBYID[id]);
+  const cap=capacity(TODAY);
+  const ci=S.checkins[TODAY]||{};
+  let main='';
+  if(!started){
+    const first=P.byDate[S.start]||[];
+    main=`<div class="empty" style="margin-bottom:12px">Your plan starts <b>${fmtL(S.start)}</b>. Here's day one — or change the start date in Settings.</div>${first.map(x=>taskCard(x.t,x)).join('')}`;
+  } else {
+    main=doneToday.map(t=>taskCard(t)).join('')+todays.map(x=>taskCard(x.t,x)).join('');
+    if(!todays.length&&!doneToday.length) main=`<div class="empty">${cap===0?'Rest day — nothing scheduled.':'Nothing left for today.'}<div style="margin-top:10px"><button class="btn pri" data-a="pull">Pull the next task into today</button></div></div>`;
+    else if(!todays.length) main+=`<div class="row" style="justify-content:center;margin-top:6px"><span class="muted">Today's plan is done.</span><button class="btn sm" data-a="pull">Pull the next task in</button></div>`;
+  }
+  // upcoming
+  const upDates=Object.keys(P.byDate).filter(d=>d>TODAY).sort().slice(0,5);
+  const up=upDates.map(d=>`<div style="margin-bottom:8px"><div class="small" style="font-weight:600">${fmtL(d)} <span class="muted">· ${h1(capacity(d))}h</span></div>${P.byDate[d].map(x=>`<div class="cal"><div class="it" style="--c:${TRACKS[x.t.tr].c};grid-column:1/-1">${esc(x.t.title)}${x.of>1?` <span class="muted">(${x.part}/${x.of})</span>`:''}</div></div>`).join('')}</div>`).join('');
+  const lcToday=Object.values(S.lc).filter(x=>x===TODAY).length;
+  return `<h1>${started?'Today · '+fmtL(TODAY):'Getting ready'}</h1>
+  ${banner(P,ST)}
+  ${kpis(P,ST)}
+  <div class="grid g2">
+    <section>
+      <div class="row" style="justify-content:space-between;margin-bottom:8px"><h2 style="margin:0">Today's plan <span class="muted small">· ${h1(cap)}h available${S.overrides[TODAY]!=null?' (custom)':''}</span></h2>
+      ${started?(S.overrides[TODAY]===0||S.overrides[TODAY]==='0'?`<button class="btn sm" data-a="restoreToday">I can study today after all</button>`:`<button class="btn ghost sm" data-a="skipToday">Can't study today</button>`):''}</div>
+      ${main}
+    </section>
+    <aside class="grid" style="align-content:start">
+      <div class="panel">
+        <h2>Daily check-in</h2>
+        <div class="field"><label for="ciH">Hours actually studied today</label><input id="ciH" type="number" min="0" max="16" step="0.5" value="${ci.hrs??h1(hoursOn(TODAY))}" data-c="ciH"></div>
+        <label class="chk" style="margin-bottom:8px"><input type="checkbox" data-c="ciCommit" ${ci.commit?'checked':''}> Pushed at least one commit to GitHub today</label>
+        <div class="small muted" style="margin-bottom:8px">LeetCode solved today: <b>${lcToday}</b> — tick problems in the LeetCode tab.</div>
+        <div class="field"><label for="ciN">Notes: what clicked, what didn't</label><textarea id="ciN" data-c="ciNote">${esc(ci.note||'')}</textarea></div>
+        <button class="btn pri" data-a="checkin">Save check-in</button>
+        <div class="small muted" style="margin-top:8px">Copy your note into <code>learning-log</code> and commit it — one honest commit a day.</div>
+      </div>
+      <div class="panel"><h2>Coming up</h2>${up||'<div class="muted">Nothing scheduled.</div>'}<a class="small" href="#plan">Full plan →</a></div>
+    </aside>
+  </div>
+  <div class="panel" style="margin-top:16px"><h2>Activity</h2>${heatmap(ST)}</div>`;
+}
+
+/* ---------- Plan ---------- */
+let PV={mode:'weeks',track:'',status:'',q:''};
+function vPlan(P,ST){
+  const tracks=Object.entries(TRACKS).map(([k,v])=>`<option value="${k}" ${PV.track===k?'selected':''}>${v.n}</option>`).join('');
+  const toolbar=`<div class="toolbar">
+   <div class="seg" role="tablist"><button class="${PV.mode==='weeks'?'on':''}" data-a="pv" data-m="weeks">By week</button><button class="${PV.mode==='cal'?'on':''}" data-a="pv" data-m="cal">Calendar</button></div>
+   <select data-c="pvTrack" aria-label="Filter by track"><option value="">All tracks</option>${tracks}</select>
+   <select data-c="pvStatus" aria-label="Filter by status"><option value="">Any status</option><option value="todo" ${PV.status==='todo'?'selected':''}>To do</option><option value="done" ${PV.status==='done'?'selected':''}>Done</option><option value="late" ${PV.status==='late'?'selected':''}>Behind original date</option><option value="s" ${PV.status==='s'?'selected':''}>Stretch only</option></select>
+   <input type="text" placeholder="Search tasks" value="${esc(PV.q)}" data-c="pvQ" aria-label="Search tasks">
+  </div>`;
+  const backlogIds=[...new Set([...P.trimmed,...Object.keys(S.deferred).filter(k=>S.deferred[k])])].filter(id=>!S.done[id]);
+  const backlog=backlogIds.length?`<div class="panel" style="margin-bottom:16px"><h2>Backlog <span class="muted small">· not scheduled</span></h2><ul class="list">${backlogIds.map(id=>{const t=TBYID[id];const auto=P.trimmed.includes(id);return `<li class="trow"><span></span><div><div class="tt">${esc(t.title)}</div><div class="meta">${chip(t.tr)}<span class="tag">${t.h}h</span><span class="tag">${auto?'auto-deferred (stretch)':'deferred by you'}</span></div></div><div class="side">${auto?`<button class="btn sm" data-a="keep" data-id="${id}">Keep in plan</button>`:`<button class="btn sm" data-a="undefer" data-id="${id}">Put back</button>`}</div></li>`}).join('')}</ul></div>`:'';
+  if(PV.mode==='cal')return `<h1>Plan</h1><p class="sub">Next five weeks, rebuilt live from your progress. Change a day's hours to block it off or add time; everything reflows.</p>${toolbar}${calendar(P)}`;
+  const match=t=>{
+    if(PV.track&&t.tr!==PV.track)return false;
+    const done=!!S.done[t.id];
+    if(PV.status==='todo'&&done)return false;
+    if(PV.status==='done'&&!done)return false;
+    if(PV.status==='s'&&!t.s)return false;
+    if(PV.status==='late'){const pd_=P.taskDates[t.id],b=BASE.taskDates[t.id];if(done||!pd_||!b||pd_.end<=b.end)return false}
+    if(PV.q&&!(t.title+' '+t.d).toLowerCase().includes(PV.q.toLowerCase()))return false;
+    return true;
+  };
+  const weeks=WEEKS.map(wk=>{
+    const ts=TASKS.filter(t=>t.w===wk.w&&match(t));if(!ts.length)return '';
+    const all=TASKS.filter(t=>t.w===wk.w),dn=all.filter(t=>S.done[t.id]).length;
+    const ws=addD(S.start,(wk.w-1)*7);
+    return `<div class="wk panel"><div class="wk-h"><span class="n">Week ${wk.w}</span><span>${esc(wk.theme)}</span><span class="muted small">original: ${fmt(ws)}–${fmt(addD(ws,6))}</span><span class="sp"></span><span class="small muted">${dn}/${all.length} done</span></div>
+    <ul class="list">${ts.map(t=>trow(t,P)).join('')}</ul></div>`;
+  }).join('');
+  return `<h1>Plan</h1><p class="sub">26 weeks · ${TASKS.length} tasks · ${TOTAL_H} hours. Dates on the right are live projections; they move when you miss or get ahead.</p>${toolbar}${backlog}${weeks||'<div class="empty">No tasks match these filters.</div>'}`;
+}
+function trow(t,P){
+  const done=S.done[t.id];const pd_=P.taskDates[t.id];const b=BASE.taskDates[t.id];
+  let when='';
+  if(done)when=`<span class="tag done">${done.known?'known':'done '+fmt(done.date)}</span>`;
+  else if(pd_){const late=b&&pd_.end>b.end;when=`<span class="tag ${late?'late':''}" title="original: ${b?fmt(b.start):''}">${pd_.start===pd_.end?fmtL(pd_.start):fmt(pd_.start)+'–'+fmt(pd_.end)}</span>`}
+  else when=`<span class="tag">backlog</span>`;
+  return `<li class="trow ${done?'isdone':''}"><input type="checkbox" aria-label="Mark ${esc(t.title)} done" data-c="toggle" data-id="${t.id}" ${done?'checked':''}>
+   <details><summary><div class="tt">${esc(t.title)}</div><div class="meta">${chip(t.tr)}<span class="tag">${t.h}h</span>${t.s?'<span class="tag s">stretch</span>':''}${t.p?`<span class="tag">${PROJECTS.find(p=>p.id===t.p).name}</span>`:''}</div></summary>
+   <div class="muted" style="margin:6px 0">${esc(t.d)}</div>${t.res.length?`<div class="row small" style="gap:6px 12px">${resLinks(t)}</div>`:''}
+   ${!done?`<div class="row" style="margin-top:8px"><button class="btn sm" data-a="known" data-id="${t.id}">I know this</button>${S.deferred[t.id]?`<button class="btn sm" data-a="undefer" data-id="${t.id}">Put back</button>`:`<button class="btn ghost sm" data-a="defer" data-id="${t.id}">Defer</button>`}</div>`:''}
+   </details><div class="side">${when}</div></li>`;
+}
+function calendar(P){
+  const s=mondayOf(TODAY<S.start?S.start:TODAY);
+  let h=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<div class="dh">${x}</div>`).join('');
+  for(let i=0;i<35;i++){
+    const d=addD(s,i);const items=(P.byDate[d]||[]).filter(x=>!PV.track||x.t.tr===PV.track);
+    const doneIt=Object.entries(S.done).filter(([id,v])=>v.date===d&&!v.known).map(([id])=>TBYID[id]);
+    const cap=capacity(d);const past=d<TODAY;
+    h+=`<div class="day ${d===TODAY?'today':''} ${cap===0?'off':''}"><div class="dd"><b>${fmt(d,(i===0||pd(d).getDate()===1)?{day:'numeric',month:'short'}:{weekday:'short',day:'numeric'})}</b>${past?`<span class="muted">${h1(hoursOn(d))}h</span>`:`<input type="number" min="0" max="16" step="0.5" value="${cap}" data-c="ovr" data-d="${d}" aria-label="Hours on ${fmtL(d)}" title="Hours available">`}</div>
+    ${doneIt.map(t=>`<div class="it" style="--c:${TRACKS[t.tr].c};text-decoration:line-through">${esc(t.title)}</div>`).join('')}
+    ${past?'':items.map(x=>`<div class="it" style="--c:${TRACKS[x.t.tr].c}">${esc(x.t.title)}${x.of>1?` <span class="muted">(${x.part}/${x.of})</span>`:''}</div>`).join('')}</div>`;
+  }
+  return `<div class="cal">${h}</div>`;
+}
+
+/* ---------- Roadmap ---------- */
+function vRoadmap(P,ST){
+  const phases=PHASES.map(ph=>{
+    const ts=TASKS.filter(t=>t.w>=ph.weeks[0]&&t.w<=ph.weeks[1]);
+    const tot=ts.reduce((a,t)=>a+t.h,0),dn=ts.reduce((a,t)=>a+(S.done[t.id]?t.h:0),0);
+    const dates=ts.map(t=>P.taskDates[t.id]).filter(Boolean);
+    const ends=dates.map(x=>x.end).sort();const starts=dates.map(x=>x.start).sort();
+    const os=addD(S.start,(ph.weeks[0]-1)*7),oe=addD(S.start,ph.weeks[1]*7-1);
+    const proj=dates.length?`Projected ${fmt(starts[0])}–${fmt(ends[ends.length-1])}`:'Complete';
+    return `<div class="panel phase"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Phase ${ph.n}: ${esc(ph.name)}</h2><span class="small muted">Weeks ${ph.weeks[0]}–${ph.weeks[1]} · original ${fmt(os)}–${fmt(oe)} · ${proj}</span></div>
+    <p class="muted" style="margin:6px 0 8px">${esc(ph.goal)}</p>
+    <div class="bar"><i style="width:${Math.round(dn/tot*100)}%"></i></div><div class="small muted" style="margin:4px 0 8px">${h1(dn)} / ${tot}h</div>
+    <h3>Exit criteria</h3><ul>${ph.exit.map((e,i)=>`<li><label class="chk"><input type="checkbox" data-c="exit" data-k="${ph.n}-${i}" ${S.exit[ph.n+'-'+i]?'checked':''}> <span>${esc(e)}</span></label></li>`).join('')}</ul></div>`;
+  }).join('');
+  const tr=Object.entries(TRACKS).map(([k,v])=>{const ts=TASKS.filter(t=>t.tr===k);const tot=ts.reduce((a,t)=>a+t.h,0);if(!tot)return'';const dn=ts.reduce((a,t)=>a+(S.done[t.id]?t.h:0),0);
+    return `<div class="trk"><span>${chip(k)}</span><div class="bar"><i style="width:${dn/tot*100}%;background:${v.c}"></i></div><span class="small muted" style="text-align:right">${h1(dn)}/${tot}h</span></div>`}).join('');
+  return `<h1>Roadmap</h1><p class="sub">Six phases from first line of Python to interview-ready ML Engineer. Tick exit criteria honestly — they're the real gate, not the calendar.</p>
+  <div class="grid g2"><div class="grid">${phases}</div><aside class="grid" style="align-content:start"><div class="panel"><h2>Hours by track</h2>${tr}</div>
+  <div class="panel"><h2>How the plan adapts</h2><ul style="padding-left:18px;margin:0" class="small">
+  <li>Tasks are a queue. Each day takes as many hours as you have; anything unfinished slides forward automatically.</li>
+  <li>Miss days and the calendar rebuilds from today. If the finish date passes your target, <b>stretch</b> tasks move to the backlog first, latest first.</li>
+  <li>“I know this” skips a task and pulls everything forward.</li>
+  <li>Long tasks split across days; use “Log today's part” to bank partial progress.</li>
+  <li>Change any day's hours in Plan → Calendar (0 = day off).</li>
+  <li>Built-in buffer: ${TOTAL_H}h of work against ~${Math.round(26*S.dayHrs.reduce((a,b)=>a+ +b,0))}h of capacity.</li></ul></div></aside></div>`;
+}
+
+/* ---------- Projects ---------- */
+function vProjects(P,ST){
+  return `<h1>Portfolio projects</h1><p class="sub">Six public repos, themed on fintech so they line up with your domain. Each one proves a specific hiring signal.</p>
+  <div class="grid g2" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">${PROJECTS.map(p=>{
+    const ts=TASKS.filter(t=>t.p===p.id);const dn=ts.filter(t=>S.done[t.id]).length;
+    return `<div class="panel"><div class="row" style="justify-content:space-between"><h2 style="margin:0"><code>${p.name}</code></h2><span class="small muted">weeks ${p.week}</span></div>
+    <div style="font-weight:600;margin:6px 0 2px">${esc(p.title)}</div>
+    <div class="small muted" style="margin-bottom:6px">${esc(p.stack)}</div>
+    <div class="small" style="margin-bottom:10px"><b>Proves:</b> ${esc(p.proves)}</div>
+    <div class="small" style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">${p.links.map(rlink).join('')}</div><div class="bar"><i style="width:${ts.length?dn/ts.length*100:0}%"></i></div><div class="small muted" style="margin:4px 0 8px">${dn}/${ts.length} build tasks</div>
+    <ul class="list small">${ts.map(t=>`<li class="row" style="gap:6px;padding:2px 0"><span>${S.done[t.id]?'✓':'○'}</span><span style="${S.done[t.id]?'text-decoration:line-through;color:var(--ink3)':''}">W${t.w} · ${esc(t.title)}</span>${!S.done[t.id]&&P.taskDates[t.id]?`<span class="muted">· ${fmt(P.taskDates[t.id].start)}</span>`:''}</li>`).join('')}</ul>
+    <h3 style="margin-top:10px">Definition of done</h3>${p.done.map((c,i)=>`<label class="chk small"><input type="checkbox" data-c="crit" data-k="${p.id}-${i}" ${S.crit[p.id+'-'+i]?'checked':''}> <span>${esc(c)}</span></label>`).join('')}
+    <div class="field" style="margin-top:10px"><label for="repo-${p.id}">Repo URL</label><input id="repo-${p.id}" type="url" placeholder="https://github.com/you/${p.name}" value="${esc(S.repos[p.id]||'')}" data-c="repo" data-k="${p.id}"></div>
+    ${S.repos[p.id]?`<a class="small" href="${esc(S.repos[p.id])}" target="_blank" rel="noopener">Open repo →</a>`:''}</div>`}).join('')}</div>
+  <div class="panel" style="margin-top:16px"><h2>Every repo should have</h2><ul class="small" style="margin:0;padding-left:18px">
+  <li>A README that opens with the problem and the result (a metric), then architecture diagram, how to run in ≤3 commands, and limitations.</li>
+  <li>Tests + CI badge, pinned dependencies, no notebooks as the only code (notebooks for exploration, <code>src/</code> for logic).</li>
+  <li>A short “Decisions & trade-offs” section — interviewers read this first.</li>
+  <li>Small, frequent commits with clear messages. No giant “final upload” commit.</li></ul></div>`;
+}
+
+/* ---------- LeetCode ---------- */
+function vLC(P,ST){
+  const byD={E:[0,0],M:[0,0],H:[0,0]};LC.forEach(g=>g.items.forEach(it=>{byD[it.d][1]++;if(S.lc[it.slug])byD[it.d][0]++}));
+  return `<h1>LeetCode</h1><p class="sub">${ST.lcTotal} problems in NeetCode-150 order (premium ones left out). Patterns unlock as the plan reaches them. Rule: 25 minutes, then read the solution, then re-code it from memory the next day.</p>
+  <div class="kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+   <div class="kpi"><div class="l">Solved</div><div class="v">${ST.lcN} / ${ST.lcTotal}</div><div class="s">pace target today: ${ST.lcDue}</div></div>
+   <div class="kpi"><div class="l">Easy</div><div class="v dE">${byD.E[0]} / ${byD.E[1]}</div></div>
+   <div class="kpi"><div class="l">Medium</div><div class="v dM">${byD.M[0]} / ${byD.M[1]}</div></div>
+   <div class="kpi"><div class="l">Hard</div><div class="v dH">${byD.H[0]} / ${byD.H[1]}</div></div></div>
+  <div class="grid g2" style="grid-template-columns:repeat(auto-fill,minmax(340px,1fr))">${LC.map(g=>{
+    const n=g.items.filter(i=>S.lc[i.slug]).length;const locked=ST.week<g.unlock&&n===0;
+    return `<div class="panel lcg ${locked?'locked':''}"><div class="hd"><h2 style="margin:0">${esc(g.pat)}</h2><span class="small muted">${n}/${g.items.length} · ${locked?'unlocks week '+g.unlock:'week '+g.unlock}</span></div>
+    ${g.items.map(it=>`<div class="lcrow"><input type="checkbox" aria-label="Solved ${esc(it.title)}" data-c="lc" data-k="${it.slug}" ${S.lc[it.slug]?'checked':''}><a href="https://leetcode.com/problems/${it.slug}/" target="_blank" rel="noopener">${esc(it.title)}</a><a class="small" href="https://www.youtube.com/results?search_query=neetcode+${encodeURIComponent(it.title)}" target="_blank" rel="noopener" title="Free video walkthrough">video</a><span class="small d${it.d}">${{E:'Easy',M:'Medium',H:'Hard'}[it.d]}</span><span class="small muted">${S.lc[it.slug]?fmt(S.lc[it.slug]):''}</span></div>`).join('')}</div>`}).join('')}</div>
+  <div class="panel" style="margin-top:16px"><h2>Also do</h2><div class="small">SQL: <a href="${R.sql50[1]}" target="_blank" rel="noopener">LeetCode Top SQL 50</a> (weeks 7–8) and <a href="${R.datalemur[1]}" target="_blank" rel="noopener">DataLemur</a>. Videos for every pattern: <a href="${R.neetcode[1]}" target="_blank" rel="noopener">NeetCode roadmap</a>. ML coding rounds (implement k-means, logistic regression, attention in NumPy) live in your <code>ml-from-scratch</code> repo.</div></div>`;
+}
+
+/* ---------- Resources ---------- */
+function vRes(){
+  const used={};TASKS.forEach(t=>t.res.forEach(k=>{(used[k]=used[k]||[]).push(t.tr)}));
+  PROJECTS.forEach(p=>p.links.forEach(k=>{(used[k]=used[k]||[]).push('proj')}));
+  const groups={};Object.keys(R).forEach(k=>{if(k==='iio'||k==='exponent')return;const tr=used[k]?used[k].sort((a,b)=>used[k].filter(x=>x===b).length-used[k].filter(x=>x===a).length)[0]:'career';(groups[tr]=groups[tr]||[]).push(k)});
+  const order=['video','course','book','practice','article','docs','tool','dataset'];
+  return `<h1>Resources</h1><p class="sub">${Object.keys(R).length-2} links, all free. A few sites have optional paid tiers (Coursera certificates, DataLemur/StrataScratch premium, cloud usage above the free tier) — the free parts are enough for this plan. Every task in the plan links to the relevant ones.</p>
+  <div class="panel" style="margin-bottom:16px"><h2>Core spine (if you only use eight)</h2><ol class="small" style="margin:0;padding-left:18px;display:grid;gap:3px">
+  <li>Python: ${rlink('cs50p')} then ${rlink('pda')}</li>
+  <li>Math & stats: ${rlink('la3b1b')} · ${rlink('stat110')} · ${rlink('statquest')}</li>
+  <li>Classical ML: ${rlink('mlcc')} · ${rlink('islp')} · ${rlink('homl')}</li>
+  <li>Deep learning: ${rlink('zth')} · ${rlink('fastai')}</li>
+  <li>NLP/LLMs: ${rlink('hf')} · ${rlink('llmzoom')}</li>
+  <li>MLOps: ${rlink('mlopsz')} · ${rlink('mwml')}</li>
+  <li>System design: ${rlink('cs329s')} · ${rlink('evidsd')}</li>
+  <li>Interviews: ${rlink('ncpractice')} · ${rlink('mlib')} · ${rlink('tih')}</li></ol></div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">${Object.entries(TRACKS).filter(([k])=>groups[k]).map(([k,v])=>`<div class="panel"><h2>${chip(k)}</h2><div class="small" style="display:flex;flex-direction:column;gap:5px">${groups[k].sort((a,b)=>order.indexOf(R[a][2])-order.indexOf(R[b][2])).map(rlink).join('')}</div></div>`).join('')}</div>`;
+}
+
+/* ---------- Settings ---------- */
+function vSettings(){
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];const order=[1,2,3,4,5,6,0];
+  return `<h1>Settings</h1><p class="sub">Changes reflow the whole plan instantly.</p>
+  <div class="grid g2"><div class="grid" style="align-content:start">
+  <div class="panel"><h2>Timeline</h2><div class="row">
+   <div class="field"><label for="sStart">Start date</label><input id="sStart" type="date" value="${S.start}" data-c="start"></div>
+   <div class="field"><label for="sTarget">Target finish</label><input id="sTarget" type="date" value="${S.target}" data-c="target"></div>
+   <button class="btn sm" data-a="target26">Reset to start + 26 weeks</button></div></div>
+  <div class="panel"><h2>Weekly hours</h2><div class="row">${order.map(i=>`<div class="field"><label for="dh${i}">${days[i]}</label><input id="dh${i}" type="number" min="0" max="16" step="0.5" style="width:70px" value="${S.dayHrs[i]}" data-c="dayHrs" data-k="${i}"></div>`).join('')}</div>
+   <div class="small muted">Total ${S.dayHrs.reduce((a,b)=>a+ +b,0)}h/week. Plan needs ~${Math.round(TOTAL_H/26*10)/10}h/week over 26 weeks.</div></div>
+  <div class="panel"><h2>Auto-adjust</h2>
+   <label class="chk"><input type="checkbox" data-c="autoTrim" ${S.autoTrim?'checked':''}> <span>When projected finish passes the target, move <b>stretch</b> tasks to the backlog automatically</span></label>
+   <hr><div class="small">${S.catchup?`Catch-up hours active ${fmt(S.catchup.from)}–${fmt(S.catchup.until)} (+${S.catchup.wd}h weekdays, +${S.catchup.we}h weekends). <button class="btn sm" data-a="clearCatchup">Remove</button>`:`No catch-up hours active. <button class="btn sm" data-a="catchup">Add 3 weeks of catch-up hours</button>`}</div>
+   <hr><div class="small">${Object.keys(S.overrides).length} day override(s). <button class="btn sm" data-a="clearOvr">Clear all overrides</button></div></div>
+  <div class="panel"><h2>Appearance</h2><div class="seg">${['auto','light','dark'].map(t=>`<button class="${S.theme===t?'on':''}" data-a="theme" data-m="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</div></div>
+  </div><aside class="grid" style="align-content:start">
+  <div class="panel"><h2>Your data</h2><p class="small">${SERVER?'Running through <code>server.py</code>: progress is written to <b>progress.json</b> in the app folder (plus daily backups in <code>backups/</code>) and mirrored in this browser.':'Opened as a plain file: progress lives in this browser only. Start the app with <code>start</code> script to also save to disk.'}</p>
+   <div class="row"><button class="btn" data-a="export">Export JSON</button><label class="btn" for="imp">Import JSON</label><input id="imp" type="file" accept="application/json" hidden data-c="import"></div>
+   <hr><button class="btn" style="color:var(--bad)" data-a="reset">Reset all progress…</button></div>
+  <div class="panel"><h2>Preview auto-adjust</h2><p class="small">Add <code>?today=YYYY-MM-DD</code> to the URL to see how the plan looks on another date without changing anything real, e.g. <code>index.html?today=${addD(S.start,20)}</code>.</p></div>
+  </aside></div>`;
+}
+
+/* =================== events =================== */
+function markDone(id,known){const t=TBYID[id];S.done[id]={date:TODAY,known:!!known,hrs:known?0:remaining(t)};delete S.deferred[id]}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id;
+  switch(a){
+    case 'done':markDone(id);return commit('Nice. Marked done.');
+    case 'known':markDone(id,true);return commit('Skipped — plan pulled forward.');
+    case 'undone':delete S.done[id];return commit('Restored');
+    case 'part':{const h=+b.dataset.h;S.prog[id]=(S.prog[id]||0)+h;(S.plog[TODAY]=S.plog[TODAY]||{})[id]=((S.plog[TODAY]||{})[id]||0)+h;return commit(`Logged ${h1(h)}h`)}
+    case 'defer':S.deferred[id]=true;return commit('Moved to backlog');
+    case 'undefer':delete S.deferred[id];return commit('Back in the plan');
+    case 'keep':S.keep[id]=true;return commit('Kept in plan');
+    case 'skipToday':S.overrides[TODAY]=0;return commit("Today's tasks moved forward");
+    case 'restoreToday':delete S.overrides[TODAY];return commit('Back on');
+    case 'pull':{const P=plan();const nd=Object.keys(P.byDate).filter(d=>d>TODAY).sort()[0];if(!nd)return;const nx=P.byDate[nd][0];S.overrides[TODAY]=h1(hoursOn(TODAY)+(P.byDate[TODAY]||[]).reduce((s,x)=>s+x.h,0)+nx.h);return commit('Pulled into today')}
+    case 'checkin':{const h=document.getElementById('ciH').value,n=document.getElementById('ciN').value;S.checkins[TODAY]=Object.assign(S.checkins[TODAY]||{},{hrs:+h||0,note:n});S.missAck=TODAY;return commit('Check-in saved')}
+    case 'ackMiss':S.missAck=TODAY;return commit();
+    case 'catchup':S.catchup={from:TODAY,until:addD(TODAY,20),wd:0.5,we:1};S.missAck=TODAY;return commit('Catch-up hours added for 3 weeks');
+    case 'clearCatchup':S.catchup=null;return commit();
+    case 'clearOvr':S.overrides={};return commit();
+    case 'target26':S.target=addD(S.start,26*7-1);return commit();
+    case 'pv':PV.mode=b.dataset.m;return render();
+    case 'theme':S.theme=b.dataset.m;return commit();
+    case 'export':{const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const l=document.createElement('a');l.href=u;l.download=`mle-path-progress-${TODAY}.json`;l.click();URL.revokeObjectURL(u);return}
+    case 'reset':if(confirm('Erase all progress? Export first if unsure.')){const st=S.start;S=defaults();S.start=st;S.target=addD(st,26*7-1);commit('Reset')}return;
+  }
+});
+document.addEventListener('change',e=>{
+  const el=e.target;const c=el.dataset.c;if(!c)return;const k=el.dataset.k;
+  switch(c){
+    case 'toggle':el.checked?markDone(el.dataset.id):delete S.done[el.dataset.id];return commit();
+    case 'lc':if(el.checked)S.lc[k]=TODAY;else delete S.lc[k];return commit();
+    case 'exit':S.exit[k]=el.checked;return commit();
+    case 'crit':S.crit[k]=el.checked;return commit();
+    case 'repo':S.repos[k]=el.value.trim();return commit('Saved');
+    case 'ciCommit':S.checkins[TODAY]=Object.assign(S.checkins[TODAY]||{},{commit:el.checked});return commit();
+    case 'ovr':{const v=el.value;if(v==='')delete S.overrides[el.dataset.d];else S.overrides[el.dataset.d]=+v;return commit()}
+    case 'start':if(el.value){const len=diffD(S.start,S.target);S.start=el.value;S.target=addD(el.value,len)}return commit();
+    case 'target':if(el.value)S.target=el.value;return commit();
+    case 'dayHrs':S.dayHrs[+k]=Math.max(0,+el.value||0);return commit();
+    case 'autoTrim':S.autoTrim=el.checked;return commit();
+    case 'pvTrack':PV.track=el.value;return render();
+    case 'pvStatus':PV.status=el.value;return render();
+    case 'import':{const f=el.files[0];if(!f)return;f.text().then(t=>{try{const j=JSON.parse(t);if(!j.v)throw 0;S=Object.assign(defaults(),j);commit('Imported')}catch(_){toast('That file is not an MLE Path export')}});return}
+  }
+});
+document.addEventListener('input',e=>{if(e.target.dataset.c==='pvQ'){PV.q=e.target.value;const pos=e.target.selectionStart;render();const n=document.querySelector('[data-c="pvQ"]');if(n){n.focus();n.setSelectionRange(pos,pos)}}});
+window.addEventListener('hashchange',()=>{render();scrollTo(0,0)});
+// re-render at midnight / when tab regains focus so the plan rolls forward on its own
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!qp.get('today')&&ds(new Date())!==TODAY)location.reload()});
+
+load().then(render);
+</script>
+</body>
+</html>
